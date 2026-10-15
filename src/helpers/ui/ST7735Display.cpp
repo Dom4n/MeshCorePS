@@ -417,16 +417,16 @@ bool ST7735Display::i2c_probe(TwoWire& wire, uint8_t addr) {
   #define PIN_TFT_LEDA_CTL_ACTIVE  HIGH
 #endif
 
-// Color scheme
-ColorVal UIColor::window_bkg = ST77XX_WHITE;
-ColorVal UIColor::title_bkg = ST77XX_BLUE;
-ColorVal UIColor::title_txt = ST77XX_WHITE;
-ColorVal UIColor::primary_txt = ST77XX_BLACK;
-ColorVal UIColor::secondary_txt = (18 << 11) | (36 << 5) | 18;  // mid-gray
-ColorVal UIColor::warning_txt = ST77XX_ORANGE;
-ColorVal UIColor::popup_bkg = ST77XX_CYAN;
-ColorVal UIColor::popup_txt = ST77XX_BLACK;
-ColorVal UIColor::corp_blue = 0x001A;
+// Color scheme - Dark theme before v1.17
+ColorVal UIColor::window_bkg = ST77XX_BLACK;
+ColorVal UIColor::title_bkg = ST77XX_BLACK;
+ColorVal UIColor::title_txt = ST77XX_GREEN;
+ColorVal UIColor::primary_txt = ST77XX_GREEN;
+ColorVal UIColor::secondary_txt = ST77XX_YELLOW;
+ColorVal UIColor::warning_txt = ST77XX_RED;
+ColorVal UIColor::popup_bkg = ST77XX_BLACK;
+ColorVal UIColor::popup_txt = ST77XX_WHITE;
+ColorVal UIColor::corp_blue = ST77XX_BLUE;
 
 bool ST7735Display::begin() {
   if (!sprite) {
