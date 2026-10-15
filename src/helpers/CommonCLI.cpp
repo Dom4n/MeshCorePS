@@ -461,6 +461,35 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
       } else {
         strcpy(reply, "off");
       }
+    } else if (strcmp(command, "sensor") == 0) {
+#if defined(ENV_PIN_SDA) && defined(ENV_PIN_SCL)
+      snprintf(reply, 160, "I2C Wire1: SDA=%d, SCL=%d", (int)ENV_PIN_SDA, (int)ENV_PIN_SCL);
+#elif defined(PIN_BOARD_SDA) && defined(PIN_BOARD_SCL)
+      snprintf(reply, 160, "I2C Wire: SDA=%d, SCL=%d", (int)PIN_BOARD_SDA, (int)PIN_BOARD_SCL);
+#elif defined(PIN_WIRE_SDA) && defined(PIN_WIRE_SCL)
+      snprintf(reply, 160, "I2C Wire: SDA=%d, SCL=%d", (int)PIN_WIRE_SDA, (int)PIN_WIRE_SCL);
+#else
+      snprintf(reply, 160, "I2C GPIOs not defined");
+#endif
+      size_t used = strlen(reply);
+#if defined(PIN_GPS_RX) && defined(PIN_GPS_TX)
+      snprintf(reply + used, 160 - used, "; GPS RX=%d, TX=%d, %s", (int)PIN_GPS_RX, (int)PIN_GPS_TX,
+#if defined(ENV_INCLUDE_GPS) && ENV_INCLUDE_GPS > 0
+               "configured");
+#else
+               "not configured");
+#endif
+#else
+      snprintf(reply + used, 160 - used, "; GPS serial not defined");
+#endif
+    } else if (strcmp(command, "powerlog") == 0) {
+      snprintf(reply, 160, "Last reset reason: %s", _board->getResetReasonString(_board->getResetReason()));
+      if (_board->isPwrMgtInitialised()) {
+        size_t used = strlen(reply);
+        snprintf(reply + used, 160 - used, "; shutdown: %s; boot: %u mV",
+                 _board->getShutdownReasonString(_board->getShutdownReason()),
+                 (unsigned)_board->getBootVoltage());
+      }
     } else if (memcmp(command, "log start", 9) == 0) {
       _callbacks->setLoggingOn(true);
       strcpy(reply, "   logging on");
