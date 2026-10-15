@@ -428,6 +428,17 @@ ColorVal UIColor::popup_bkg = ST77XX_BLACK;
 ColorVal UIColor::popup_txt = ST77XX_WHITE;
 ColorVal UIColor::corp_blue = ST77XX_BLUE;
 
+// Attaches SCK/MOSI to the SPI peripheral. pinMode() on them would detach it instead:
+// ESP32 routes the pin back to plain GPIO, nRF52 drops the SCK input buffer SPIM needs.
+static void beginSpi() {
+#ifdef ESP_PLATFORM
+  _spi->begin(PIN_TFT_SCL, -1 /* _miso */, PIN_TFT_SDA /* _mosi */, -1);
+#else
+  _spi->begin();
+#endif
+  _spi->setClockDivider(SPI_CLOCK_DIV2);
+}
+
 bool ST7735Display::begin() {
   if (!sprite) {
     // alloc offscreen canvas
@@ -453,12 +464,7 @@ bool ST7735Display::begin() {
     pinMode(PIN_TFT_DC, OUTPUT);
     pinMode(PIN_TFT_LEDA_CTL, OUTPUT);
 
-#ifdef ESP_PLATFORM
-    _spi->begin(PIN_TFT_SCL, -1 /* _miso */, PIN_TFT_SDA /* _mosi */, -1);
-#else
-    _spi->begin(); 
-#endif
-    _spi->setClockDivider(SPI_CLOCK_DIV2);
+    beginSpi();
 
     _height = 80;
     _width = 160;
@@ -512,6 +518,14 @@ void ST7735Display::_resetAndInit() {
 void ST7735Display::turnOn() {
   if (!_isOn) {
     if (_peripher_power) _peripher_power->claim();
+
+    // Restore GPIOs
+    pinMode(PIN_TFT_CS, OUTPUT);
+    pinMode(PIN_TFT_DC, OUTPUT);
+    pinMode(PIN_TFT_RST, OUTPUT);
+    pinMode(PIN_TFT_LEDA_CTL, OUTPUT);
+    beginSpi();
+
     _resetAndInit();
     sendCommand(ST77XX_DISPON);
 
@@ -525,9 +539,19 @@ void ST7735Display::turnOff() {
   if (_isOn) {
     sendCommand(ST77XX_DISPOFF);
 
-    //digitalWrite(PIN_TFT_RST, LOW);
+    // digitalWrite(PIN_TFT_RST, LOW);
     // Now turn off the backlight
     digitalWrite(PIN_TFT_LEDA_CTL, !PIN_TFT_LEDA_CTL_ACTIVE);
+
+    // Stop the signal pins from powering the display after its supply is cut.
+    _spi->end();  // release SCK/MOSI; turnOn() attaches them again
+    pinMode(PIN_TFT_CS, INPUT);
+    pinMode(PIN_TFT_DC, INPUT);
+    pinMode(PIN_TFT_SDA, INPUT);
+    pinMode(PIN_TFT_SCL, INPUT);
+    pinMode(PIN_TFT_RST, INPUT);
+    pinMode(PIN_TFT_LEDA_CTL, INPUT);
+
     _isOn = false;
 
     if (_peripher_power) _peripher_power->release();
