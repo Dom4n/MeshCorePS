@@ -69,7 +69,8 @@ public:
   }
 
   virtual void powerOff() override;
-  void enterDeepSleep(uint32_t secs);
+  void shutdownPeripherals() override;
+  void enterDeepSleep(uint32_t secs) override;
 
   uint32_t getIRQGpio() override {
 #ifdef P_LORA_DIO_1

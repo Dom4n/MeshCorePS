@@ -55,6 +55,8 @@ public:
   virtual void onBeforeTransmit() { }
   virtual void onAfterTransmit() { }
   virtual void reboot() = 0;
+  virtual void shutdownPeripherals() { }
+  virtual void enterDeepSleep(uint32_t secs) { if (secs == 0) powerOff(); }
   virtual void powerOff() { /* no op */ }
   // Called by example setup() functions to signal that boot is complete.
   // Boards may override to stop a boot-indicator LED sequence or similar.

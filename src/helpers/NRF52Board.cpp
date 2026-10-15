@@ -1,5 +1,6 @@
 #if defined(NRF52_PLATFORM)
 #include "NRF52Board.h"
+#include "ArduinoHelpers.h"
 #include <target.h>
 
 #include <bluefruit.h>
@@ -388,6 +389,25 @@ void NRF52Board::powerOff() {
   } else { // SoftDevice is not enable
     NRF_POWER->SYSTEMOFF = POWER_SYSTEMOFF_SYSTEMOFF_Enter;
   }
+}
+
+void NRF52Board::enterDeepSleep(uint32_t secs) {
+  if (secs == 0) { powerOff(); return; }
+  shutdownPeripherals();
+#if (__FPU_USED == 1)
+  __set_FPSCR(__get_FPSCR() & ~(0x0000009F));
+  (void)__get_FPSCR();
+  NVIC_ClearPendingIRQ(FPU_IRQn);
+#endif
+  // nRF SYSTEMOFF has no timer wake: keep the RTOS/RTC running, then reboot.
+  // One-second chunks avoid overflow and checkpoint retained time during sleep.
+  while (secs--) {
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    if (persistent_magic == CLOCK_MAGIC_NUM && persistent_time >= RTC_TIME_MIN) {
+      ++persistent_time;
+    }
+  }
+  reboot();
 }
 
 bool NRF52Board::getBootloaderVersion(char* out, size_t max_len) {
