@@ -1,3 +1,5 @@
+#include <helpers/PeriodicReboot.h>
+static PeriodicReboot periodic_reboot;
 #include "SensorMesh.h"
 
 #ifdef DISPLAY_CLASS
@@ -164,4 +166,9 @@ void loop() {
 #ifdef HAS_EXTERNAL_WATCHDOG
   external_watchdog.loop();
 #endif
+  if (periodic_reboot.due(the_mesh.getNodePrefs()->reboot_interval, millis(),
+                         the_mesh.isTransmitting(), board.isOTAUpdateActive())) {
+    board.reboot();
+  }
+
 }

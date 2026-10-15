@@ -417,6 +417,7 @@ bool NRF52Board::startOTAUpdate(const char *id, char reply[]) {
   Bluefruit.configPrphConn(92, BLE_GAP_EVENT_LENGTH_MIN, 16, 16);
 
   if (!Bluefruit.begin(1, 0)) return false;
+  _ota_update_active = true;
 
   // Set max power. Accepted values are: -40, -30, -20, -16, -12, -8, -4, 0, 4
   Bluefruit.setTxPower(4);

@@ -1196,3 +1196,7 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 - Connect with any TCP client (e.g. `nc`, PuTTY) to access the same CLI available over serial.
 
 ---
+
+### Periodic reboot
+
+`get reboot.interval` / `set reboot.interval <0-255>`: hours since boot (0 disables). Repeater, Room Server and Sensor persist this setting. A due reboot waits for current TX and an active OTA session to finish.

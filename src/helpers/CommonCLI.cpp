@@ -1,3 +1,4 @@
+#include "PeriodicReboot.h"
 #include <Arduino.h>
 #include "CommonCLI.h"
 #include "TxtDataHelpers.h"
@@ -90,7 +91,8 @@ void CommonCLI::loadPrefsInt(FILESYSTEM* fs, const char* filename) {  // Legacy 
     file.read((uint8_t *)&_prefs->bridge_channel, sizeof(_prefs->bridge_channel));                 // 135
     file.read((uint8_t *)&_prefs->bridge_secret, sizeof(_prefs->bridge_secret));                   // 136
     file.read((uint8_t *)&_prefs->powersaving_enabled, sizeof(_prefs->powersaving_enabled));       // 152
-    file.read(pad, 3);                                                                             // 153
+    file.read((uint8_t *)&_prefs->reboot_interval, sizeof(_prefs->reboot_interval));               // 153
+    file.read(pad, 2);                                                                             // 154
     file.read((uint8_t *)&_prefs->gps_enabled, sizeof(_prefs->gps_enabled));                       // 156
     file.read((uint8_t *)&_prefs->gps_interval, sizeof(_prefs->gps_interval));                     // 157
     file.read((uint8_t *)&_prefs->advert_loc_policy, sizeof (_prefs->advert_loc_policy));          // 161
@@ -516,7 +518,16 @@ void CommonCLI::handleCommand(uint32_t sender_timestamp, char* command, char* re
 void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* reply) {
   const char* config = &command[4];
 
-  if (memcmp(config, "allow.read.only ", 16) == 0) {
+  if (strncmp(config, "reboot.interval ", 16) == 0) {
+    uint8_t hours;
+    if (!PeriodicReboot::parseHours(config + 16, hours)) {
+      strcpy(reply, "Error: interval range is 0-255 hours");
+    } else {
+      _prefs->reboot_interval = hours;
+      savePrefs();
+      sprintf(reply, "OK - reboot.interval %u h", (unsigned)hours);
+    }
+  } else if (memcmp(config, "allow.read.only ", 16) == 0) {
     _prefs->allow_read_only = memcmp(&config[16], "on", 2) == 0;
     savePrefs();
     strcpy(reply, "OK");
@@ -730,7 +741,9 @@ void CommonCLI::handleSetCmd(uint32_t sender_timestamp, char* command, char* rep
 
 void CommonCLI::handleGetCmd(uint32_t sender_timestamp, char* command, char* reply) {
   const char* config = &command[4];
-  if (memcmp(config, "allow.read.only", 15) == 0) {
+  if (strcmp(config, "reboot.interval") == 0) {
+    sprintf(reply, "> %u", (unsigned)_prefs->reboot_interval);
+  } else if (memcmp(config, "allow.read.only", 15) == 0) {
     sprintf(reply, "> %s", _prefs->allow_read_only ? "on" : "off");
   } else if (memcmp(config, "flood.advert.interval", 21) == 0) {
     sprintf(reply, "> %d", ((uint32_t) _prefs->flood_advert_interval));

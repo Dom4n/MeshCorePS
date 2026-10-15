@@ -57,6 +57,7 @@ public:
   uint8_t bridge_channel = 0; // 1-14 (ESP-NOW only)
   char bridge_secret[16]; // for XOR encryption of bridge packets (ESP-NOW only)
   // Power setting
+  uint8_t reboot_interval = 0; // hours; zero disables automatic restart
   uint8_t powersaving_enabled = 0; // boolean
   // Gps settings
   uint8_t gps_enabled = 0;
@@ -171,6 +172,7 @@ private:
     void structure() override {
       def("adc_mult", _parent->adc_multiplier);
       def("pwr_sav_en", _parent->powersaving_enabled);
+      def("pwr_reboot_int", _parent->reboot_interval);
     }
   public:
     PowerPrefs(NodePrefs* parent) : _parent(parent) { }

@@ -173,6 +173,7 @@ protected:
   virtual unsigned long getDutyCycleWindowMs() const { return 3600000; }
 
 public:
+  bool isTransmitting() const { return outbound != nullptr; }
   void begin();
   void loop();
 

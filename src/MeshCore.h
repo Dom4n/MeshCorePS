@@ -43,7 +43,10 @@ namespace mesh {
 #define  BD_STARTUP_RX_PACKET  1
 
 class MainBoard {
+protected:
+  bool _ota_update_active = false;
 public:
+  virtual bool isOTAUpdateActive() const { return _ota_update_active; }
   virtual uint16_t getBattMilliVolts() = 0;
   virtual float getMCUTemperature() { return NAN; }
   virtual bool setAdcMultiplier(float multiplier) { return false; };
