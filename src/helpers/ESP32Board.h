@@ -72,7 +72,11 @@ public:
   void enterDeepSleep(uint32_t secs);
 
   uint32_t getIRQGpio() override {
+#ifdef P_LORA_DIO_1
     return P_LORA_DIO_1; // default for SX1262
+#else
+    return mesh::MainBoard::getIRQGpio();  // no LoRa radio (ESP-NOW)
+#endif
   }
 
   void sleep(uint32_t secs) override {
@@ -86,7 +90,12 @@ public:
     }
 
     // Set GPIO wakeup
-    gpio_num_t wakeupPin = (gpio_num_t)getIRQGpio();    
+    const uint32_t irq_gpio = getIRQGpio();
+    if (irq_gpio == (uint32_t)-1) {
+      delay(1);  // no LoRa wake source (ESP-NOW): stay awake so Wi-Fi keeps receiving
+      return;
+    }
+    gpio_num_t wakeupPin = (gpio_num_t)irq_gpio;
 
     // Configure timer wakeup
     if (secs > 0) {
