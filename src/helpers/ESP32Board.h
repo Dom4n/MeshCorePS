@@ -21,6 +21,8 @@ class ESP32Board : public mesh::MainBoard {
 protected:
   uint8_t startup_reason;
   bool inhibit_sleep = false;
+  uint32_t button_woke_at = 0;
+  bool button_sleep_inhibited = false;
   static inline portMUX_TYPE sleepMux = portMUX_INITIALIZER_UNLOCKED;
 
 public:
@@ -75,7 +77,10 @@ public:
 
   void sleep(uint32_t secs) override {
     // Skip if not allow to sleep
-    if (inhibit_sleep) {
+    if (button_sleep_inhibited && (uint32_t)(millis() - button_woke_at) >= 30000) {
+      button_sleep_inhibited = false;
+    }
+    if (inhibit_sleep || button_sleep_inhibited) {
       delay(1); // Give MCU to OTA to run
       return;
     }
@@ -102,12 +107,25 @@ public:
     esp_sleep_enable_gpio_wakeup();
     gpio_wakeup_enable((gpio_num_t)wakeupPin, GPIO_INTR_HIGH_LEVEL); // Wake up when receiving a LoRa packet
 
+#if defined(PIN_USER_BTN) && (PIN_USER_BTN >= 0)
+    gpio_wakeup_enable((gpio_num_t)PIN_USER_BTN,
+        USER_BTN_PRESSED == LOW ? GPIO_INTR_LOW_LEVEL : GPIO_INTR_HIGH_LEVEL);
+#endif
+
     // MCU enters light sleep
     esp_light_sleep_start();
 
     // Avoid ISR flood during wakeup due to HIGH LEVEL interrupt
     gpio_wakeup_disable(wakeupPin);
     gpio_set_intr_type(wakeupPin, GPIO_INTR_POSEDGE);
+
+#if defined(PIN_USER_BTN) && (PIN_USER_BTN >= 0)
+    gpio_wakeup_disable((gpio_num_t)PIN_USER_BTN);
+    if (gpio_get_level((gpio_num_t)PIN_USER_BTN) == USER_BTN_PRESSED) {
+      button_woke_at = millis();
+      button_sleep_inhibited = true;
+    }
+#endif
 
     // Enable CPU interrupt servicing
     portEXIT_CRITICAL(&sleepMux);
