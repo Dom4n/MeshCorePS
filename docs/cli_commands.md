@@ -1200,3 +1200,16 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 ### Periodic reboot
 
 `get reboot.interval` / `set reboot.interval <0-255>`: hours since boot (0 disables). Repeater, Room Server and Sensor persist this setting. A due reboot waits for current TX and an active OTA session to finish.
+
+---
+
+### Repeater return path (outpath)
+
+Remote admin console of a Repeater only; the command needs the requesting client, so it fails on the local serial console.
+
+- `get outpath`
+- `set outpath flood|direct|clear`
+- `set outpath <hop>,<hop>,...`: 1-, 2- or 3-byte hop hashes, e.g. `set outpath 12,34` or `set outpath aabbcc,ddeeff`.
+
+The path applies to replies to this client. `flood` survives reboot, login and learned PATH messages; `direct` and a hop list are replaced when the client logs in again by flood or a new PATH arrives; `clear` returns to automatic path learning. Saved with the ACL about 5 s later.
+
