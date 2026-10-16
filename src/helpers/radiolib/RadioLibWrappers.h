@@ -100,6 +100,8 @@ public:
   RxPowerSavingStatus getRxPowerSavingStatus() const override;
   bool isRxPowerSavingCalibrationActive() const override { return _nf_calib_active; }
 
+  bool hasPendingReceive() { return isPacketPendingOrReceiving(); }
+
   bool isReceiving() override {
     if (isReceivingPacket()) return true;
 

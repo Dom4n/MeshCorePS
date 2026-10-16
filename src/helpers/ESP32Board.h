@@ -80,7 +80,10 @@ public:
 #endif
   }
 
-  void sleep(uint32_t secs) override {
+  void sleep(uint32_t secs) override { sleepMicros(secs * 1000000ULL); }
+  void sleepMillis(uint32_t ms) override { if (ms) sleepMicros(ms * 1000ULL); }
+
+  void sleepMicros(uint64_t micros) {
     // Skip if not allow to sleep
     if (button_sleep_inhibited && (uint32_t)(millis() - button_woke_at) >= 30000) {
       button_sleep_inhibited = false;
@@ -99,8 +102,8 @@ public:
     gpio_num_t wakeupPin = (gpio_num_t)irq_gpio;
 
     // Configure timer wakeup
-    if (secs > 0) {
-      esp_sleep_enable_timer_wakeup(secs * 1000000ULL); // Wake up periodically to do scheduled jobs
+    if (micros > 0) {
+      esp_sleep_enable_timer_wakeup(micros); // Wake up periodically to do scheduled jobs
     }
 
     // Disable CPU interrupt servicing

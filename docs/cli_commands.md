@@ -448,7 +448,7 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 ---
 
-#### View or change this node's power saving flag (Repeater and companion)
+#### View or change this node's power saving flag (Repeater, room server and companion)
 **Usage:**
 - `powersaving`
 - `powersaving on`

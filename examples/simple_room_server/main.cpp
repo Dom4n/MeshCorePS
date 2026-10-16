@@ -4,6 +4,7 @@ static PeriodicReboot periodic_reboot;
 #include <Mesh.h>
 
 #include "MyMesh.h"
+#include <helpers/RoleSleep.h>
 
 #ifdef ETHERNET_ENABLED
   #define ETHERNET_CLI_BANNER "MeshCore Room Server CLI"
@@ -172,5 +173,8 @@ void loop() {
                          the_mesh.isTransmitting(), board.isOTAUpdateActive())) {
     board.reboot();
   }
+  sleepRoleIfIdle(the_mesh.getNodePrefs()->powersaving_enabled,
+                  the_mesh.hasPendingWork(), command[0] != 0,
+                  the_mesh.getSleepBudgetMillis());
 
 }

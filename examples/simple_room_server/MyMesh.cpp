@@ -1,4 +1,5 @@
 #include "MyMesh.h"
+#include <helpers/IdleSleep.h>
 
 #define REPLY_DELAY_MILLIS          1500
 #define PUSH_NOTIFY_DELAY_MILLIS    2000
@@ -1081,4 +1082,18 @@ void MyMesh::loop() {
   uint32_t now = millis();
   uptime_millis += now - last_millis;
   last_millis = now;
+}
+
+bool MyMesh::hasPendingWork() const {
+  return _mgr->getOutboundTotal() > 0 || _mgr->getInboundTotal() > 0 ||  // rxdelay packets wait in the inbound queue
+         isTransmitting() || _prefs.getRadioPrefs()->isRxPowerSavingCalibrationActive();
+}
+
+uint32_t MyMesh::getSleepBudgetMillis() {
+  IdleSleepBudget budget(millis());
+  budget.until(next_local_advert); budget.until(next_flood_advert);
+  budget.until(set_radio_at); budget.until(revert_radio_at);
+  budget.until(dirty_contacts_expiry);
+  if (acl.getNumClients() > 0) budget.until(next_push);
+  return budget.millis();
 }
