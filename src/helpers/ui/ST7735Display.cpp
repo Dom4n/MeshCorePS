@@ -428,15 +428,39 @@ ColorVal UIColor::popup_bkg = ST77XX_BLACK;
 ColorVal UIColor::popup_txt = ST77XX_WHITE;
 ColorVal UIColor::corp_blue = ST77XX_BLUE;
 
-// Attaches SCK/MOSI to the SPI peripheral. pinMode() on them would detach it instead:
-// ESP32 routes the pin back to plain GPIO, nRF52 drops the SCK input buffer SPIM needs.
-static void beginSpi() {
-#ifdef ESP_PLATFORM
-  _spi->begin(PIN_TFT_SCL, -1 /* _miso */, PIN_TFT_SDA /* _mosi */, -1);
-#else
-  _spi->begin();
+#ifdef NRF52_PLATFORM
+  #include <nrf_gpio.h>
 #endif
-  _spi->setClockDivider(SPI_CLOCK_DIV2);
+
+// Move SCK/MOSI between the SPI peripheral and plain inputs without touching the bus.
+// On Tracker V2 and Wireless Tracker the LoRa radio shares this SPI peripheral (HSPI), and
+// SPIClass::end() gates its clock, so the radio's next transfer would never complete.
+// pinMode() alone cannot restore them: ESP32 routes the pin back to plain GPIO, and nRF52
+// drops the SCK input buffer that SPIM needs.
+static void attachSpiPins() {
+#ifdef ESP_PLATFORM
+  spiAttachSCK(_spi->bus(), PIN_TFT_SCL);
+  spiAttachMOSI(_spi->bus(), PIN_TFT_SDA);
+#elif defined(NRF52_PLATFORM)
+  // same configuration as SPIClass::begin()
+  nrf_gpio_cfg(g_ADigitalPinMap[PIN_TFT_SCL], NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_CONNECT,
+               NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_H0H1, NRF_GPIO_PIN_NOSENSE);
+  nrf_gpio_cfg(g_ADigitalPinMap[PIN_TFT_SDA], NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_DISCONNECT,
+               NRF_GPIO_PIN_NOPULL, NRF_GPIO_PIN_H0H1, NRF_GPIO_PIN_NOSENSE);
+#else
+  pinMode(PIN_TFT_SCL, OUTPUT);
+  pinMode(PIN_TFT_SDA, OUTPUT);
+#endif
+}
+
+static void detachSpiPins() {
+#ifdef ESP_PLATFORM
+  spiDetachSCK(_spi->bus(), PIN_TFT_SCL);
+  spiDetachMOSI(_spi->bus(), PIN_TFT_SDA);
+#else
+  pinMode(PIN_TFT_SCL, INPUT);
+  pinMode(PIN_TFT_SDA, INPUT);
+#endif
 }
 
 bool ST7735Display::begin() {
@@ -464,7 +488,12 @@ bool ST7735Display::begin() {
     pinMode(PIN_TFT_DC, OUTPUT);
     pinMode(PIN_TFT_LEDA_CTL, OUTPUT);
 
-    beginSpi();
+#ifdef ESP_PLATFORM
+    _spi->begin(PIN_TFT_SCL, -1 /* _miso */, PIN_TFT_SDA /* _mosi */, -1);
+#else
+    _spi->begin(); 
+#endif
+    _spi->setClockDivider(SPI_CLOCK_DIV2);
 
     _height = 80;
     _width = 160;
@@ -524,7 +553,7 @@ void ST7735Display::turnOn() {
     pinMode(PIN_TFT_DC, OUTPUT);
     pinMode(PIN_TFT_RST, OUTPUT);
     pinMode(PIN_TFT_LEDA_CTL, OUTPUT);
-    beginSpi();
+    attachSpiPins();
 
     _resetAndInit();
     sendCommand(ST77XX_DISPON);
@@ -544,11 +573,9 @@ void ST7735Display::turnOff() {
     digitalWrite(PIN_TFT_LEDA_CTL, !PIN_TFT_LEDA_CTL_ACTIVE);
 
     // Stop the signal pins from powering the display after its supply is cut.
-    _spi->end();  // release SCK/MOSI; turnOn() attaches them again
     pinMode(PIN_TFT_CS, INPUT);
     pinMode(PIN_TFT_DC, INPUT);
-    pinMode(PIN_TFT_SDA, INPUT);
-    pinMode(PIN_TFT_SCL, INPUT);
+    detachSpiPins();
     pinMode(PIN_TFT_RST, INPUT);
     pinMode(PIN_TFT_LEDA_CTL, INPUT);
 
