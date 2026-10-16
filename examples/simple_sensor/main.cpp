@@ -1,6 +1,7 @@
 #include <helpers/PeriodicReboot.h>
 static PeriodicReboot periodic_reboot;
 #include "SensorMesh.h"
+#include <helpers/RoleSleep.h>
 
 #ifdef DISPLAY_CLASS
   #include "UITask.h"
@@ -170,5 +171,8 @@ void loop() {
                          the_mesh.isTransmitting(), board.isOTAUpdateActive())) {
     board.reboot();
   }
+  sleepRoleIfIdle(the_mesh.getNodePrefs()->powersaving_enabled,
+                  the_mesh.hasPendingWork(), command[0] != 0,
+                  the_mesh.getSleepBudgetMillis());
 
 }

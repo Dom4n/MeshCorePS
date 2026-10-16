@@ -1,4 +1,5 @@
 #include "SensorMesh.h"
+#include <helpers/IdleSleep.h>
 #include <helpers/RoutingPolicy.h>
 #include <helpers/sensors/LPPDataHelpers.h>
 
@@ -1116,4 +1117,21 @@ void SensorMesh::loop() {
     acl.save(_fs);
     dirty_contacts_expiry = 0;
   }
+}
+
+bool SensorMesh::hasPendingWork() const {
+  return _mgr->getOutboundTotal() > 0 || _mgr->getInboundTotal() > 0 ||  // rxdelay packets wait in the inbound queue
+         isTransmitting() || _prefs.getRadioPrefs()->isRxPowerSavingCalibrationActive();
+}
+
+uint32_t SensorMesh::getSleepBudgetMillis() {
+  IdleSleepBudget budget(millis());
+  budget.until(next_local_advert); budget.until(next_flood_advert);
+  budget.until(set_radio_at); budget.until(revert_radio_at);
+  budget.until(dirty_contacts_expiry);
+  for (int i = 0; i < num_alert_tasks; i++) budget.until(alert_tasks[i]->send_expiry);
+  uint32_t now_secs = getRTCClock()->getCurrentTime();
+  if (now_secs >= last_read_time + SENSOR_READ_INTERVAL_SECS) return 0;
+  budget.until(millis() + (last_read_time + SENSOR_READ_INTERVAL_SECS - now_secs) * 1000UL);  // next sensor read
+  return budget.millis();
 }
