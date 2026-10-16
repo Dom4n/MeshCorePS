@@ -58,7 +58,10 @@ int main() {
  phy.irq();assert(w.isSendComplete());w.onSendFinished();w.pump();assert(w.getRxPowerSavingStatus().armed);
  puts("PASS TX -> RXPS");
  w.setCADEnabled(true);phy.scan_result=RADIOLIB_LORA_DETECTED;assert(w.isChannelActive());assert(w.getRxPowerSavingStatus().armed);
- puts("PASS CAD -> RXPS");
+ assert(w.getCADBusyCount()==1);
+ phy.scan_result=RADIOLIB_CHANNEL_FREE;assert(!w.isChannelActive());assert(w.getCADBusyCount()==1);
+ phy.scan_result=-706;assert(w.isChannelActive());assert(w.getCADBusyCount()==1);
+ puts("PASS CAD -> RXPS and busy counter excludes errors/free channel");
  w.arm_result=-708;w.restart();int before=phy.continuous;w.pump();
  assert(!w.getRxPowerSavingStatus().armed);assert(phy.continuous>before);assert(w.getRxPowerSavingStatus().last_error==-708);
  puts("PASS arm failure -> continuous RX with error");

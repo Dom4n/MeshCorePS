@@ -17,6 +17,7 @@ protected:
   PhysicalLayer* _radio;
   mesh::MainBoard* _board;
   uint32_t n_recv, n_sent, n_recv_errors;
+  uint32_t _cad_busy_count = 0;
   int16_t _noise_floor, _threshold;
   float _last_rssi, _last_snr;
   bool _last_metrics_valid;
@@ -121,11 +122,13 @@ public:
 
   void loop() override;
 
+  uint32_t getCADBusyCount() const { return _cad_busy_count; }
   uint32_t getPacketsRecv() const { return n_recv; }
   uint32_t getPacketsRecvErrors() const { return n_recv_errors; }
   uint32_t getPacketsSent() const { return n_sent; }
   void resetStats() {
     n_recv = n_sent = n_recv_errors = n_rx_ps_arm_failures = 0;
+    _cad_busy_count = 0;
     // Clearing diagnostics also grants a fresh set of arm attempts. If they
     // fail again, the normal three-failure continuous-RX fallback applies.
     _rx_ps_arm_retry.reset();

@@ -351,6 +351,7 @@ bool RadioLibWrapper::isChannelActive() {
     // try to read a non-existent packet and count a spurious recv error.
     state = STATE_IDLE;
     startRecv();
+    if (result == RADIOLIB_LORA_DETECTED) ++_cad_busy_count;
     if (result != RADIOLIB_CHANNEL_FREE) return true;
   }
 

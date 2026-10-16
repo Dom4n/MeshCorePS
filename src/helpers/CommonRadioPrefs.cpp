@@ -110,7 +110,8 @@ bool CommonRadioPrefs::handleCommand(const char* command, uint32_t sender_timest
   }
 
   if (strcmp(command, "get cad") == 0) {
-    sprintf(reply, "> %s", isCadEnabled() ? "on" : "off");
+    sprintf(reply, "> %s; channel busy: %lu", isCadEnabled() ? "on" : "off",
+            (unsigned long)radio_driver.getCADBusyCount());
     return true;
   }
   if (memcmp(command, "set cad ", 8) == 0) {
