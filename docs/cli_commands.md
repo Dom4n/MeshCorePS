@@ -1203,6 +1203,21 @@ Ethernet support is available on RAK4631 boards with a RAK13800 (W5100S) Etherne
 
 ---
 
+### RX power saving (RXPS)
+
+Repeater, Room Server, Sensor and Companion. SX1262 and LR1110 receive in a duty cycle; LR1121, LR2021 and SX127x stay in continuous RX (`supported=no`).
+
+- `get radio.rxps`: `desired` (saved on/off), `effective` (`armed` or `continuous`), `supported`, `err` (last error), `fail` (arm failures), `level`, `catch` (preamble symbols still caught), `preamble`, `rx`/`sleep` (µs). `erx`/`eslp` appear when the driver had to clamp the periods.
+- `set radio.rxps off|on|conservative|balanced|max|overdrive|riskyWorkingMax`: `on` = `conservative` = level 3; `balanced` = level 6; `max` = level 8; `overdrive` (9) and `riskyWorkingMax` (10) run outside the datasheet timing rule.
+- `set radio.rxps level <1-10> [preamble <16|32>]`, `set radio.rxps max|overdrive|riskyWorkingMax preamble <16|32>`
+- `set radio.rxps <rx_us> <sleep_us>`: manual periods, 1000–30000000 µs, kept across SF/BW changes.
+
+**Default:** Balanced (level 6, preamble 16) for fresh installs. A saved setting, including `off`, wins.
+
+**Errors:** a profile that does not fit the active SF/BW is rejected, or, after a radio change, leaves the node in continuous RX with `err=-10001` while the saved choice is kept. Other nonzero `err` values come from the radio driver; after three failed arm attempts the node stays in continuous RX until the setting changes. `set radio` takes effect at reboot; until then the windows of the running modulation stay in use.
+
+---
+
 ### Repeater return path (outpath)
 
 Remote admin console of a Repeater only; the command needs the requesting client, so it fails on the local serial console.

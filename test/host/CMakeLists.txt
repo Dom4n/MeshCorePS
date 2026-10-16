@@ -1,4 +1,4 @@
-# Host tests for the RadioLib wrappers and radio drivers.
+# Host tests for the RadioLib wrappers, radio drivers and radio preferences.
 #   cmake -S test/host -B .pio/host -DRADIOLIB_DIR=<RadioLib 7.8.1 source>
 #   cmake --build .pio/host && ctest --test-dir .pio/host
 cmake_minimum_required(VERSION 3.16)
@@ -32,3 +32,15 @@ target_compile_options(driver_spi PRIVATE -UNDEBUG -include ${CMAKE_CURRENT_SOUR
 target_include_directories(driver_spi PRIVATE ../../test/mocks ../../src ../../src/helpers/radiolib)
 target_link_libraries(driver_spi RadioLib)
 add_test(NAME driver_spi COMMAND driver_spi)
+
+# Real NodePrefs (repeater/room/sensor and companion) with CommonRadioPrefs; needs GoogleTest.
+find_package(GTest REQUIRED)
+add_executable(config_lifecycle config_lifecycle.cpp
+  ../../src/helpers/CommonRadioPrefs.cpp ../../src/helpers/ConfigSerializer.cpp
+  ../../src/helpers/DynamicConfigSerializer.cpp ../../src/helpers/TxtDataHelpers.cpp
+  ../../src/Utils.cpp ../../src/Packet.cpp
+  ../../src/helpers/radiolib/RXPowerSaving.cpp ../../src/helpers/radiolib/RXPowerSavingCLI.cpp)
+target_compile_features(config_lifecycle PRIVATE cxx_std_17)
+target_include_directories(config_lifecycle PRIVATE ../../src config_target ../../test/mocks)
+target_link_libraries(config_lifecycle GTest::gtest)  # the suite has its own main()
+add_test(NAME config_lifecycle COMMAND config_lifecycle)

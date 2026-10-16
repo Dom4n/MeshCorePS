@@ -37,6 +37,7 @@ public:
   uint32_t gps_interval = 0;     // GPS read interval in seconds
   uint8_t autoadd_config = 0;    // bitmask for auto-add contacts config
   uint8_t rx_boosted_gain = 0; // SX126x RX boosted gain mode (0=power saving, 1=boosted)
+  RxPowerSavingConfig rxps;
   uint8_t radio_fem_rxgain = 0; // external LoRa FEM RX gain (LNA)
   uint8_t radio_fem_txgain = 0; // external LoRa FEM TX gain (low by default)
   uint8_t _client_repeat = 0;  // DEPRECATED -> use repeat.disable_fwd
@@ -64,6 +65,11 @@ private:
     NodePrefs* _parent;
   protected:
     void structure() override {
+      def("rxps_en", _parent->rxps.enabled);
+      def("rxps_rx_us", _parent->rxps.rx_us);
+      def("rxps_sleep_us", _parent->rxps.sleep_us);
+      def("rxps_level", _parent->rxps.level);
+      def("rxps_preamble", _parent->rxps.preamble);
       def("freq", _parent->freq);
       def("bw", _parent->bw);
       def("sf", _parent->sf);
@@ -84,6 +90,7 @@ private:
     }
   public:
     RadioPrefs(NodePrefs* parent) : _parent(parent) { }
+    RxPowerSavingConfig* getRxPowerSavingConfig() override { return &_parent->rxps; }
 
     // CommonRadioPrefs interface
     float getFreq() const override { return _parent->freq; }
@@ -211,6 +218,7 @@ public:
     , wifi(this)
 #endif
   {
+    rxps.enabled = 1; // fresh installs: Balanced L6/p16; loaded fields override this
     node_name[0] = 0;
     default_scope_name[0] = 0;
     memset(default_scope_key, 0, sizeof(default_scope_key));
@@ -220,6 +228,7 @@ public:
   void setRepeatEn(bool en) { repeat.disable_fwd = en ? 0 : 1; }
 
   CommonRadioPrefs* getRadioPrefs() { return &radio; }
+  const CommonRadioPrefs* getRadioPrefs() const { return &radio; }
   KeyValueStore* getCustom() { return &custom; }
 
   bool isDirty() const override { return ConfigSerializer::isDirty() || radio.isDirty() || custom.isDirty(); }
