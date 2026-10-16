@@ -940,6 +940,8 @@ MyMesh::MyMesh(mesh::Radio &radio, mesh::RNG &rng, mesh::RTCClock &rtc, SimpleMe
   _prefs.rx_boosted_gain = 1; // enabled by default
 #endif
 #endif
+
+  _prefs.powersaving_enabled = 1;  // fresh installs; a saved power.pwr_sav_en overrides it
 }
 
 void MyMesh::begin() {
@@ -2182,6 +2184,17 @@ bool MyMesh::handleCommand(const char* command, uint32_t sender_timestamp, char*
     return true;
   }
 #endif
+
+  if (strcmp(command, "powersaving on") == 0 || strcmp(command, "powersaving off") == 0) {
+    _prefs.powersaving_enabled = strcmp(command, "powersaving on") == 0 ? 1 : 0;
+    savePrefs();
+    strcpy(reply, _prefs.powersaving_enabled ? "on" : "off");
+    return true;
+  }
+  if (strcmp(command, "powersaving") == 0) {
+    strcpy(reply, _prefs.powersaving_enabled ? "on" : "off");
+    return true;
+  }
 
   if (strcmp(command, "board") == 0) {
     strcpy(reply, board.getManufacturerName());

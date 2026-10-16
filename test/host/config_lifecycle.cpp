@@ -111,6 +111,14 @@ TEST(CommonPowerPrefs, SavedRebootAndPowerSavingOverrideDefaults) {
  NodePrefs restored;ReplayStream saved(output.text().c_str());ASSERT_TRUE(restored.loadSerial(saved));
  EXPECT_EQ(0,restored.powersaving_enabled);EXPECT_EQ(255,restored.reboot_interval);
 }
+TEST(CompanionPowerPrefs, DefaultOnAndSavedOffRoundTrip) {
+ CompanionNodePrefs prefs; EXPECT_EQ(1,prefs.powersaving_enabled);
+ ReplayStream input("{power:{pwr_sav_en:0}}"); ASSERT_TRUE(prefs.loadSerial(input));
+ EXPECT_EQ(0,prefs.powersaving_enabled);
+ CaptureStream output; ASSERT_TRUE(prefs.saveSerial(output));
+ CompanionNodePrefs restored; ReplayStream saved(output.text().c_str());
+ ASSERT_TRUE(restored.loadSerial(saved)); EXPECT_EQ(0,restored.powersaving_enabled);
+}
 int main(int argc,char** argv){testing::InitGoogleTest(&argc,argv);return RUN_ALL_TESTS();}
 
 TYPED_TEST(RadioPrefsTest, FEMDefaultsPersistAndDoNotChangeInternalGainOrTX) {

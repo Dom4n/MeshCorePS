@@ -49,6 +49,7 @@ public:
   char default_scope_name[31];
   uint8_t default_scope_key[16];
   int8_t tz_offset = 0;
+  uint8_t powersaving_enabled = 1; // boolean
 #ifdef ENABLE_WIFI_INTERFACE
   #ifndef WIFI_SSID
     #define WIFI_SSID ""
@@ -179,6 +180,17 @@ private:
   };
   CompanionPrefs companion;
 
+  class PowerPrefs : public ConfigSerializer {  // same keys as CommonCLI
+    NodePrefs* _parent;
+  protected:
+    void structure() override {
+      def("pwr_sav_en", _parent->powersaving_enabled);
+    }
+  public:
+    PowerPrefs(NodePrefs* parent) : _parent(parent) { }
+  };
+  PowerPrefs power;
+
   DynamicConfigSerializer custom;
 
 #ifdef ENABLE_WIFI_INTERFACE
@@ -207,13 +219,14 @@ protected:
     def("gps", gps);
     def("repeat", repeat);
     def("comp", companion);
+    def("power", power);
     def("custom", custom);
 #ifdef ENABLE_WIFI_INTERFACE
     def("wifi", wifi);
 #endif
   }
 public:
-  NodePrefs() : radio(this), gps(this), companion(this), custom(&radio)
+  NodePrefs() : radio(this), gps(this), companion(this), power(this), custom(&radio)
 #ifdef ENABLE_WIFI_INTERFACE
     , wifi(this)
 #endif
