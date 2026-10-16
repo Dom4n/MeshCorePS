@@ -26,6 +26,7 @@ protected:
   int32_t _floor_sample_sum;
   uint8_t _preamble_sf;
 
+  bool _rx_ps_restart_pending = false;
   bool _rx_ps_config_error = false;
   bool _rx_ps_enabled;
   bool _rx_ps_armed;
@@ -65,6 +66,7 @@ protected:
     return RADIOLIB_ERR_UNSUPPORTED;
   }
   virtual int16_t stopDutyCycleHardware() { return _radio->standby(); }
+  virtual int16_t startContinuousReceive() { return _radio->startReceive(); }
   virtual bool isPacketReady();
   virtual bool isChipBusy() { return false; }
   float packetScoreInt(float snr, int sf, int packet_len);
