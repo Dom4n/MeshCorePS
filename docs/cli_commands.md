@@ -462,6 +462,8 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 
 **Note:** When enabled, device enters sleep mode between radio transmissions
 
+**Companion:** on ESP32 the flag switches automatic light sleep at once (no reboot). Light sleep stays off on USB-serial, hardware-serial, Ethernet and ESP-NOW builds, and while a WiFi network is configured; those builds still scale the CPU clock (80/40 MHz). ESP32-C6 uses the upstream Arduino 3.x core without power management, so it gets neither. nRF52 companions sleep between events regardless of the flag.
+
 ---
 
 ### Routing
