@@ -25,3 +25,10 @@ target_compile_options(wrapper_lifecycle_lr2021 PRIVATE -UNDEBUG -include ${CMAK
 target_include_directories(wrapper_lifecycle_lr2021 PRIVATE ../../src ../../test/mocks)
 target_link_libraries(wrapper_lifecycle_lr2021 RadioLib)
 add_test(NAME wrapper_lifecycle_lr2021 COMMAND wrapper_lifecycle_lr2021)
+
+add_executable(driver_spi driver_spi.cpp ../../src/helpers/radiolib/RXPowerSaving.cpp)
+target_compile_features(driver_spi PRIVATE cxx_std_17)
+target_compile_options(driver_spi PRIVATE -UNDEBUG -include ${CMAKE_CURRENT_SOURCE_DIR}/platform_stub.h)
+target_include_directories(driver_spi PRIVATE ../../test/mocks ../../src ../../src/helpers/radiolib)
+target_link_libraries(driver_spi RadioLib)
+add_test(NAME driver_spi COMMAND driver_spi)
