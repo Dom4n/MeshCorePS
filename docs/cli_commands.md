@@ -285,9 +285,12 @@ This document provides an overview of CLI commands that can be sent to MeshCore 
 **Parameters:**
 - `state`: `on`|`off`
 
+**Default:** `off` for fresh installs; a build with `-D RADIO_FEM_RXGAIN=1` defaults to `on`. A saved setting wins.
+
 **Notes:**
 - This controls the external LoRa FEM receive-path LNA where the board supports it.
 - This is separate from `radio.rxgain`, which controls the radio chip receive gain mode.
+- Boards without a controllable LNA answer `Error: unsupported`.
 
 ---
 

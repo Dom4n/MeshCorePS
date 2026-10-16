@@ -3,6 +3,13 @@
 #include "KeyValueStore.h"
 #include "radiolib/RXPowerSaving.h"
 
+// Default for the external LoRa FEM receive LNA on boards that have one (fresh
+// installs only; 'set radio.fem.rxgain on|off' changes it at runtime). Off saves
+// power; a board or env can build with -D RADIO_FEM_RXGAIN=1 to default it on.
+#ifndef RADIO_FEM_RXGAIN
+  #define RADIO_FEM_RXGAIN 0
+#endif
+
 class CommonRadioPrefs : public ConfigSerializer, public KeyValueStore {
   bool _is_dirty = false;
   uint8_t _active_sf = 0;

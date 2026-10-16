@@ -820,7 +820,7 @@ SensorMesh::SensorMesh(mesh::MainBoard& board, mesh::Radio& radio, mesh::Millise
   _prefs.gps_enabled = 0;
   _prefs.gps_interval = 0;
   _prefs.advert_loc_policy = ADVERT_LOC_PREFS;
-  _prefs.radio_fem_rxgain = 1;
+  _prefs.radio_fem_rxgain = RADIO_FEM_RXGAIN; // external RX LNA off unless the build or a saved value says otherwise
   _prefs.radio_fem_txgain = 0;
 
   memset(default_scope.key, 0, sizeof(default_scope.key));

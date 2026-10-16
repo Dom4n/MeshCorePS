@@ -53,6 +53,19 @@ bool CommonRadioPrefs::setByKey(const char* key, const char* value) {
 }
 
 bool CommonRadioPrefs::handleCommand(const char* command, uint32_t sender_timestamp, char* reply) {
+  const bool fem_get = strcmp(command, "get radio.fem.rxgain") == 0;
+  const bool fem_set = strncmp(command, "set radio.fem.rxgain ", 21) == 0;
+  if (fem_get || fem_set) {
+    if (fem_set && strcmp(command + 21, "on") != 0 && strcmp(command + 21, "off") != 0) {
+      strcpy(reply, "Error: state must be on or off");
+    } else if (!board.handleCommand(command, sender_timestamp, reply)) {
+      strcpy(reply, "Error: unsupported");
+    } else if (fem_set && strncmp(reply, "OK", 2) == 0) {
+      // The board applies the LNA and updates its dynamic preferences.
+      markDirty(); // also save when the dynamic value lives outside radio.*
+    }
+    return true;
+  }
   if (strncmp(command, "get radio.rxps", 14) == 0 &&
       (command[14] == 0 || command[14] == ' ')) {
     const char* suffix = command + 14;

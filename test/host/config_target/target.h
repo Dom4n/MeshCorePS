@@ -18,3 +18,22 @@ struct ConfigTestRadio : RxPowerSavingControl {
 };
 #define WRAPPER_CLASS ConfigTestRadio
 inline ConfigTestRadio radio_driver;
+
+#include <helpers/KeyValueStore.h>
+#include <cstring>
+struct ConfigTestBoard {
+ bool supported = true, lna = false;
+ KeyValueStore* prefs = nullptr;
+ void attachDynamicPrefs(KeyValueStore* p) {
+  prefs=p;char value[8]={};p->getByKey("fem_rxgain",value,sizeof(value));lna=strcmp(value,"1")==0;
+ }
+ bool handleCommand(const char* cmd,uint32_t,char* reply) {
+  if (!supported) return false;
+  if (strcmp(cmd,"get radio.fem.rxgain")==0) {strcpy(reply,lna ? "> on" : "> off");return true;}
+  if (strncmp(cmd,"set radio.fem.rxgain ",21)==0) {
+   lna=strcmp(cmd+21,"on")==0;prefs->setByKey("fem_rxgain",lna ? "1" : "0");strcpy(reply,"OK");return true;
+  }
+  return false;
+ }
+};
+inline ConfigTestBoard board;

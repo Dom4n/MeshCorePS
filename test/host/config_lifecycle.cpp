@@ -112,3 +112,31 @@ TEST(CommonPowerPrefs, SavedRebootAndPowerSavingOverrideDefaults) {
  EXPECT_EQ(0,restored.powersaving_enabled);EXPECT_EQ(255,restored.reboot_interval);
 }
 int main(int argc,char** argv){testing::InitGoogleTest(&argc,argv);return RUN_ALL_TESTS();}
+
+TYPED_TEST(RadioPrefsTest, FEMDefaultsPersistAndDoNotChangeInternalGainOrTX) {
+ TypeParam prefs;char reply[160];
+ prefs.rx_boosted_gain=1;prefs.radio_fem_txgain=1;
+ board=ConfigTestBoard{};board.attachDynamicPrefs(prefs.getCustom());
+ EXPECT_FALSE(board.lna);
+ auto* radio=prefs.getRadioPrefs();
+ ASSERT_TRUE(radio->handleCommand("set radio.fem.rxgain on",0,reply));
+ EXPECT_STREQ("OK",reply);EXPECT_TRUE(board.lna);EXPECT_TRUE(prefs.isDirty());
+ CaptureStream saved;prefs.saveSerial(saved);
+ TypeParam restored;ReplayStream input(saved.text().c_str());restored.loadSerial(input);
+ board.attachDynamicPrefs(restored.getCustom());EXPECT_TRUE(board.lna);
+ auto* next=restored.getRadioPrefs();
+ next->handleCommand("get radio.fem.rxgain",0,reply);EXPECT_STREQ("> on",reply);
+ next->handleCommand("set radio.fem.rxgain onion",0,reply);EXPECT_NE(strstr(reply,"Error"),nullptr);EXPECT_TRUE(board.lna);
+ next->handleCommand("set radio.fem.rxgain off",0,reply);EXPECT_FALSE(board.lna);
+ EXPECT_EQ(1,restored.rx_boosted_gain);EXPECT_EQ(1,restored.radio_fem_txgain);
+ CaptureStream saved_off;ASSERT_TRUE(restored.saveSerial(saved_off));
+ TypeParam off_restored;ReplayStream off_input(saved_off.text().c_str());
+ ASSERT_TRUE(off_restored.loadSerial(off_input));
+ board.attachDynamicPrefs(off_restored.getCustom());EXPECT_FALSE(board.lna);
+ EXPECT_EQ(1,off_restored.rx_boosted_gain);EXPECT_EQ(1,off_restored.radio_fem_txgain);
+ next=off_restored.getRadioPrefs();
+ board.supported=false;
+ next->handleCommand("set radio.fem.rxgain on",0,reply);EXPECT_STREQ("Error: unsupported",reply);
+ next->handleCommand("get radio.fem.rxgain",0,reply);EXPECT_STREQ("Error: unsupported",reply);
+ EXPECT_FALSE(board.lna);
+}
