@@ -100,7 +100,6 @@ public:
   // Called from the example main loops. Lets a board feed its watchdog and
   // run periodic housekeeping. Default no-op.
   virtual void loop() { /* no op */ }
-  inline static uint32_t n_cad_busy = 0;
 };
 
 /**
