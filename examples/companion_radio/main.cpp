@@ -2,6 +2,12 @@
 #include <Mesh.h>
 #include "MyMesh.h"
 
+#ifdef ESP32_PLATFORM
+#include "esp_pm.h"
+#include "esp_bt.h"
+#include "PowerSaving.h"
+#endif
+
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
   uint32_t n = 0;
@@ -287,6 +293,10 @@ void setup() {
 #endif
 
   board.onBootComplete();
+
+#if defined(ESP32_PLATFORM)
+  applyCompanionPowerSaving(the_mesh.getNodePrefs()->powersaving_enabled);
+#endif
 }
 
 void loop() {
@@ -302,11 +312,27 @@ void loop() {
   external_watchdog.loop();
 #endif
 
-  if (!the_mesh.hasPendingWork()) {
+  if (the_mesh.getNodePrefs()->powersaving_enabled && !the_mesh.hasPendingWork()) {
 #if defined(NRF52_PLATFORM)
     board.sleep(0); // nrf ignores seconds param, sleeps whenever possible
+#elif defined(ESP32_PLATFORM)
+  #if defined(BLE_PIN_CODE)
+      if (!bluetooth_interface.isReadBusy() && !bluetooth_interface.isWriteBusy()) { // BLE is not busy
+        vTaskDelay(pdMS_TO_TICKS(10));                                               // attempt to sleep
+      }
+  #elif defined(ENABLE_USB_INTERFACE)
+      vTaskDelay(pdMS_TO_TICKS(10)); // attempt to sleep
+  #endif
 #endif
   }
+
+#if defined(ESP32_PLATFORM)
+  static uint8_t applied_powersaving = the_mesh.getNodePrefs()->powersaving_enabled;
+  if (the_mesh.getNodePrefs()->powersaving_enabled != applied_powersaving) { // changed via CLI
+    applied_powersaving = the_mesh.getNodePrefs()->powersaving_enabled;
+    applyCompanionPowerSaving(applied_powersaving);
+  }
+#endif
 
 #ifdef ENABLE_WIFI_INTERFACE
   if (wifi_enabled) {
