@@ -2,11 +2,8 @@
 #include <Mesh.h>
 #include "MyMesh.h"
 
-#ifdef ESP32_PLATFORM
-#include "esp_pm.h"
-#include "esp_bt.h"
-#include "PowerSaving.h"
-#endif
+// PowerSaving variant
+#include "helpers/PowerSaving.h"
 
 // Believe it or not, this std C function is busted on some platforms!
 static uint32_t _atoi(const char* sp) {
@@ -295,7 +292,7 @@ void setup() {
   board.onBootComplete();
 
 #if defined(ESP32_PLATFORM)
-  applyCompanionPowerSaving(the_mesh.getNodePrefs()->powersaving_enabled);
+  PowerSaving::applyCompanionPowerSaving(the_mesh.getNodePrefs()->powersaving_enabled);
 #endif
 }
 
@@ -321,7 +318,9 @@ void loop() {
         vTaskDelay(pdMS_TO_TICKS(10));                                               // attempt to sleep
       }
   #elif defined(ENABLE_USB_INTERFACE)
-      vTaskDelay(pdMS_TO_TICKS(10)); // attempt to sleep
+      if(!usb_serial_interface.isReadBusy() && !usb_serial_interface.isWriteBusy()){
+        vTaskDelay(pdMS_TO_TICKS(10)); // attempt to sleep
+      }
   #endif
 #endif
   }
@@ -330,7 +329,7 @@ void loop() {
   static uint8_t applied_powersaving = the_mesh.getNodePrefs()->powersaving_enabled;
   if (the_mesh.getNodePrefs()->powersaving_enabled != applied_powersaving) { // changed via CLI
     applied_powersaving = the_mesh.getNodePrefs()->powersaving_enabled;
-    applyCompanionPowerSaving(applied_powersaving);
+    PowerSaving::applyCompanionPowerSaving(applied_powersaving);
   }
 #endif
 
