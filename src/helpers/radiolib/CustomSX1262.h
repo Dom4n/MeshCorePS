@@ -19,6 +19,29 @@ class CustomSX1262 : public SX1262 {
     uint32_t getTcxoDelay() const { return tcxoDelay; }
 
     CustomSX1262(Module *mod) : SX1262(mod) { }
+#ifdef RXPS_TEST_RIG
+    int16_t startRigPreamble(uint32_t duration_us) {
+      const uint8_t dummy = 0;
+      RadioModeConfig_t cfg = {};
+      cfg.transmit.data = &dummy;
+      cfg.transmit.len = 1;
+      int16_t err = stageMode(RADIOLIB_RADIO_MODE_TX, &cfg);
+      if (err != RADIOLIB_ERR_NONE) return err;
+      auto* m = getMod();
+      m->setRfSwitchState(Module::MODE_TX);
+      // Hardware cutoff also prevents a payload if the MCU is delayed.
+      const uint32_t limit_us = duration_us + tcxoDelay + 3000;
+      const uint32_t ticks = ((uint64_t)limit_us * 64 + 999) / 1000;
+      err = setTx(ticks);
+      if (err != RADIOLIB_ERR_NONE) return err;
+      const uint32_t started = micros();
+      while (m->hal->digitalRead(m->getGpio())) {
+        if ((uint32_t)(micros() - started) >= 100000) return RADIOLIB_ERR_TX_TIMEOUT;
+      }
+      return RADIOLIB_ERR_NONE;
+    }
+#endif
+
 
     // PowerSaving variant
     // RadioLib's begin() installs its own 5000 us TCXO startup delay and

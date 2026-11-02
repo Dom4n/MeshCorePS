@@ -15,6 +15,10 @@ struct PacketMillis {
 
 // PowerSaving variant
 class RadioLibWrapper : public mesh::Radio, public RxPowerSavingControl {
+#ifdef RXPS_TEST_RIG
+  friend class RXPSRig;
+#endif
+
 protected:
   PhysicalLayer* _radio;
   mesh::MainBoard* _board;

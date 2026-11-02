@@ -3,7 +3,7 @@
 
 #include "MyMesh.h"
 
-#ifdef DISPLAY_CLASS
+#if defined(DISPLAY_CLASS) && !defined(RXPS_TEST_RIG)
   #include "UITask.h"
   static UITask ui_task(board, display);
 #endif
@@ -11,6 +11,11 @@
 #ifdef ETHERNET_ENABLED
   #define ETHERNET_CLI_BANNER "MeshCore Repeater CLI"
   #include <helpers/nrf52/EthernetCLI.h>
+#endif
+
+#ifdef RXPS_TEST_RIG
+#include "RXPSRig.h"
+static RXPSRig rig;
 #endif
 
 StdRNG fast_rng;
@@ -103,7 +108,7 @@ void setup() {
 #endif
 
   // PowerSaving variant
-#if ENV_INCLUDE_GPS == 1
+#if ENV_INCLUDE_GPS == 1 && !defined(RXPS_TEST_RIG)
   // Apply PowerSaving profile for GPS
   if (sensors.getLocationProvider() != NULL) {
     // GPS on and off duration in seconds
@@ -115,8 +120,11 @@ void setup() {
   sensors.begin();
 
   the_mesh.begin(fs);
+#ifdef RXPS_TEST_RIG
+  rig.begin(the_mesh);
+#endif
 
-#ifdef DISPLAY_CLASS
+#if defined(DISPLAY_CLASS) && !defined(RXPS_TEST_RIG)
   // PowerSaving variant
   // Added board for battery display
   ui_task.begin(the_mesh.getNodePrefs(), FIRMWARE_BUILD_DATE, FIRMWARE_VERSION, &board);
@@ -127,7 +135,7 @@ void setup() {
 #endif
 
   // send out initial zero hop Advertisement to the mesh
-#if ENABLE_ADVERT_ON_BOOT == 1
+#if ENABLE_ADVERT_ON_BOOT == 1 && !defined(RXPS_TEST_RIG)
   the_mesh.sendSelfAdvertisement(16000, false);
 #endif
 
@@ -207,9 +215,12 @@ void loop() {
   }
 #endif
 
+#ifdef RXPS_TEST_RIG
+  rig.loop();
+#endif
   the_mesh.loop();
   sensors.loop();
-#ifdef DISPLAY_CLASS
+#if defined(DISPLAY_CLASS) && !defined(RXPS_TEST_RIG)
   ui_task.loop();
 #endif
   rtc_clock.tick();
